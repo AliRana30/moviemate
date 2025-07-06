@@ -18,7 +18,7 @@ app.use(express.json())
 app.use(cors(corsOptions));
 app.use(clerkMiddleware());
 app.get('/',(req,res)=> res.send("Server is Live"))
-app.use("/api/inngest", serve({ client: inngest, functions : [] }));
+app.use("/api/inngest", serve({ client: inngest, functions }));
 
 app.listen(process.env.PORT, () => {
   connectDB()
