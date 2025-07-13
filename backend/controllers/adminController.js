@@ -57,10 +57,6 @@ export const fetchisAdmin = async (req, res) => {
 export const getDashboardData = async (req, res) => {
   try {
     console.log("🔥 getDashboardData HIT");
-    
-    // No need to check admin again - protectAdmin middleware already did it
-    // req.user is available from the middleware
-    
     console.log("🔥 Fetching dashboard data for admin:", req.user?.id);
 
     // Fetch dashboard data
@@ -128,25 +124,43 @@ export const getAllShows = async (req, res) => {
 export const getAllBookings = async (req, res) => {
   try {
     console.log("🔥 getAllBookings HIT");
-    
-    
+
     const bookings = await Bookings.find({})
-      .populate("user")
       .populate({ path: "show", populate: { path: "movie" } })
       .sort({ createdAt: -1 });
 
     console.log("🔥 Found bookings:", bookings.length);
 
-    return res.status(200).json({ 
-      success: true, 
-      message: "All bookings fetched successfully", 
-      data: bookings 
+    // Enrich each booking with Clerk user data
+    const enrichedBookings = await Promise.all(
+      bookings.map(async (booking) => {
+        const userId = booking.user;
+        let fullName = "Unknown";
+
+        try {
+          const user = await clerkClient.users.getUser(userId);
+          fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
+        } catch (err) {
+          console.warn(`⚠️ Clerk user not found for ID: ${userId}`);
+        }
+
+        return {
+          ...booking.toObject(),
+          user: { fullName }, 
+        };
+      })
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "All bookings fetched successfully",
+      data: enrichedBookings
     });
   } catch (error) {
-    console.error("Error in getAllBookings:", error);
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Internal server error while fetching bookings' 
+    console.error("❌ Error in getAllBookings:", error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error while fetching bookings'
     });
   }
 };

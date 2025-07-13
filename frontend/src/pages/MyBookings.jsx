@@ -5,30 +5,32 @@ import { DateFormat } from '../libs/dateFormat';
 import { UserContext } from '../context/UserContext';
 import toast from 'react-hot-toast';
 import { useAuth } from '@clerk/clerk-react';
+import { Link } from 'react-router-dom';
 
 const MyBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const { axios, image_base_url, user } = useContext(UserContext);
 
-  const {getToken} = useAuth()
+  const { getToken } = useAuth();
+
   const getBookings = async () => {
     try {
       const token = await getToken({ template: 'default' });
 
       const { data } = await axios.get('/api/user/bookings', {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (data.success) {
-        setBookings(data.bookings);
+        setBookings(data.data); 
       } else {
-        toast.error(data.message || "Failed to load bookings");
+        toast.error(data.message || 'Failed to load bookings');
       }
     } catch (error) {
-      toast.error("Error fetching bookings");
+      toast.error('Error fetching bookings');
       console.error(error);
     } finally {
       setLoading(false);
@@ -65,7 +67,10 @@ const MyBookings = () => {
 
       <div className="flex flex-col gap-8 max-w-3xl mx-auto">
         {bookings.map((booking, index) => (
-          <div key={index} className="flex bg-[#2a0e0e]/40 backdrop-blur-md rounded-xl overflow-hidden shadow-lg">
+          <div
+            key={index}
+            className="flex bg-[#2a0e0e]/40 backdrop-blur-md rounded-xl overflow-hidden shadow-lg"
+          >
             {/* Poster */}
             <div className="flex-shrink-0">
               <img
@@ -92,10 +97,13 @@ const MyBookings = () => {
                 Total Price: ${booking.amount}
               </div>
 
-              {!booking.isPaid && (
-                <button className="bg-red-600 w-40 text-white px-4 py-2 rounded-full text-sm hover:bg-red-700 transition">
+              {!booking.isPaid && booking.paymentLink && (
+                <Link
+                  to={booking.paymentLink}
+                  className="bg-red-600 w-40 text-white px-4 py-2 rounded-full text-sm hover:bg-red-700 transition"
+                >
                   Pay Now
-                </button>
+                </Link>
               )}
             </div>
           </div>

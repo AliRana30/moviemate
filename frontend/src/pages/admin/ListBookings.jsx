@@ -1,15 +1,19 @@
 import { useContext, useEffect, useState } from 'react';
 import { UserContext } from '../../context/UserContext';
 import toast from 'react-hot-toast';
+import { useAuth } from '@clerk/clerk-react';
 
 const ListBookings = () => {
-  const { user, axios ,getToken} = useContext(UserContext);
+  const { user, axios } = useContext(UserContext);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const {getToken} = useAuth()
+
   const fetchBookings = async () => {
     try {
-      const token = await getToken();
+      const token = await getToken({ template: 'default' });
+
       const { data } = await axios.get('/api/admin/bookings', {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -52,7 +56,8 @@ const ListBookings = () => {
                 <td className="p-2">{booking.user?.fullName || 'Unknown'}</td>
                 <td className="p-2">{booking.show?.movie?.title || 'N/A'}</td>
                 <td className="p-2">{new Date(booking.show?.showDateTime).toLocaleString()}</td>
-                <td className="p-2">{booking.seats.join(', ')}</td>
+                <td className="p-2">{booking.bookedSeats.join(', ')}</td>
+
                 <td className="p-2">Rs. {booking.amount}</td>
               </tr>
             ))}

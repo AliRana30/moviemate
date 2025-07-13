@@ -1,6 +1,7 @@
 import Show from "../models/Show.js";
 import Bookings from "../models/Bookings.js";
 import stripe from 'stripe'
+import inngest from 'inngest'
 // Check if selected seats are available
 const checkAvalaiblity = async (showId, selectedSeats) => {
   try {
@@ -87,7 +88,7 @@ export const createBooking = async (req, res) => {
         product_data : {
           name : showData.movie.title
         },
-        unit_amount : Math.floor(booking.amount) *100 
+        unit_amount : Math.floor(booking.amount * 100) 
       },
       quantity : 1
     }]
@@ -100,12 +101,19 @@ export const createBooking = async (req, res) => {
        metadata :{
           bookingId : booking._id.toString()
        },
-       expires_at : Math.floor(Date.now() / 1000) + 30 * 60 // expires in 30 mins
     })
 
     booking.paymentLink = session.url;
     await booking.save()
 
+    // run inngest function to check payment status after 10 mints
+
+    await inngest.send({
+       name : 'app/checkpayment',
+       data : {
+         bookingId : booking._id.toString()
+       }
+    })
 
     res.status(201).json({
       success: true,
