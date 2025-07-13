@@ -1,6 +1,8 @@
 import stripe from "stripe";
 import Bookings from "../models/Bookings.js";
 
+const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY);
+
 export const stripeWebHook = async (req, res) => {
   const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY);
   const sig = req.headers["stripe-signature"];
@@ -12,38 +14,34 @@ export const stripeWebHook = async (req, res) => {
       sig,
       process.env.STRIPE_WEBHOOK_SECRET
     );
+    console.log("✅ Stripe Webhook Event:", event.type);
   } catch (error) {
-    return res.status(400).json(`webhook error : ${error.message}`);
+    console.error("❌ Stripe Webhook Signature Error:", error.message);
+    return res.status(400).json({ error: error.message });
   }
 
   try {
-    switch (event.type) {
-      case "payment_intent.succeeded": {
-        const paymentIntent = event.data.object;
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
 
-        // Fetch the session using the payment_intent ID
-        const sessionList = await stripeInstance.checkout.sessions.list({
-          payment_intent: paymentIntent.id,
-        });
+      console.log("🔁 Stripe Session Metadata:", session.metadata);
 
-        const session = sessionList.data[0];
-        const { bookingId } = session.metadata;
-
-        // Update the booking record in MongoDB
-        await Bookings.findByIdAndUpdate(bookingId, {
-          isPaid: true,
-          paymentLink: "",
-        });
-
-        break;
+      const bookingId = session.metadata?.bookingId;
+      if (!bookingId) {
+        return res.status(400).json({ error: "Missing bookingId" });
       }
 
-      default:
-        console.log("unhandled event",event.type)
-        break;
+      const updated = await Bookings.findByIdAndUpdate(bookingId, {
+        isPaid: true,
+        paymentLink: "",
+      });
+
+      console.log("✅ Booking marked as paid:", updated?._id);
     }
-    res.json({received : true})
+
+    res.json({ received: true });
   } catch (error) {
-    console.error('webhook error',error.message)
+    console.error("❌ Webhook Error:", error.message);
+    res.status(500).json({ error: "Webhook processing failed" });
   }
 };

@@ -46,6 +46,7 @@ const ListBookings = () => {
               <th className="p-2">Username</th>
               <th className="p-2">Movie</th>
               <th className="p-2">Showtime</th>
+              <th className="p-2">Payment Status</th>
               <th className="p-2">Seats</th>
               <th className="p-2">Amount</th>
             </tr>
@@ -56,9 +57,10 @@ const ListBookings = () => {
                 <td className="p-2">{booking.user?.fullName || 'Unknown'}</td>
                 <td className="p-2">{booking.show?.movie?.title || 'N/A'}</td>
                 <td className="p-2">{new Date(booking.show?.showDateTime).toLocaleString()}</td>
+                <td className="p-2">{booking.isPaid ? "Paid" : "Not Paid"}</td>
                 <td className="p-2">{booking.bookedSeats.join(', ')}</td>
 
-                <td className="p-2">Rs. {booking.amount}</td>
+                <td className="p-2">{booking.amount}$</td>
               </tr>
             ))}
           </tbody>
