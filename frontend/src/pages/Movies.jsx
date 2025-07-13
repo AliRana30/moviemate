@@ -1,14 +1,19 @@
+import { useContext } from 'react';
 import { dummyShowsData } from '../assets/assets'
 import BlurCircle from '../components/BlurCircle';
 import MovieCards from '../components/MovieCards'
+import { UserContext } from '../context/UserContext';
 
 const Movies = () => {
-  return dummyShowsData.length > 0 ? (
+
+  const {shows} = useContext(UserContext)
+
+  return shows.length > 0 ? (
     <div className="mt-28 px-5 max-w-7xl mx-auto">
       <BlurCircle/>
       <h1 className="mb-5 text-xl font-bold text-white">Now Showing</h1>
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {dummyShowsData.map((movie) => (
+        {shows.map((movie) => (
           <MovieCards movie={movie} key={movie._id} />
         ))}
       </div> 
