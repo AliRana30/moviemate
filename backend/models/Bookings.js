@@ -1,35 +1,50 @@
-import mongoose, { mongo } from "mongoose";
+import mongoose from 'mongoose';
 
+const bookingSchema = new mongoose.Schema({
+  user: {
+    type: String,
+    required: true,
+    ref: 'User'
+  },
+  show: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: 'Show'
+  },
+  amount: {
+    type: Number,
+    required: true
+  },
+  bookedSeats: {
+    type: [String],
+    required: true
+  },
+  isPaid: {
+    type: Boolean,
+    default: false
+  },
+  paymentLink: {
+    type: String,
+    default: ''
+  },
+  stripeSessionId: {
+    type: String,
+    default: ''
+  },
+  paymentDate: {
+    type: Date,
+    default: null
+  },
+  expiresAt: {
+    type: Date,
+    default: () => new Date(Date.now() + 40 * 60 * 1000) 
+  }
+}, {
+  timestamps: true
+});
 
-const BookingSchema = new mongoose.Schema({
+bookingSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0, partialFilterExpression: { isPaid: false } });
 
-    user : {
-        type: String,
-        ref: "User",
-        required: true
-    },
-    show : {
-        type: String,
-        ref: "Show",
-        required: true
-    },
-    amount : {
-        type: Number,
-        required: true
-    },
-    bookedSeats : {
-        type: Array,
-        default: {}
-    },
-    isPaid : {
-        type: Boolean,
-        default: false
-    },
-    paymentLink : {
-        type: String,
-    },
-},{timestamps : true})
-
-const Bookings = mongoose.model("Bookings",BookingSchema)
+const Bookings = mongoose.model('Booking', bookingSchema);
 
 export default Bookings;

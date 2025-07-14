@@ -97,9 +97,6 @@ export const getDashboardData = async (req, res) => {
 
 export const getAllShows = async (req, res) => {
   try {
-    console.log("🔥 getAllShows HIT");
-    
-    // No need to check admin again - protectAdmin middleware already did it
     
     const shows = await Show.find({ showDateTime: { $gte: new Date() } })
       .populate("movie")

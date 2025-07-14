@@ -1,7 +1,8 @@
 import Show from "../models/Show.js";
 import Bookings from "../models/Bookings.js";
-import stripe from 'stripe'
-import {inngest} from '../inngest/index.js'
+import stripe from 'stripe';
+import { inngest } from '../inngest/index.js';
+
 // Check if selected seats are available
 const checkAvalaiblity = async (showId, selectedSeats) => {
   try {
@@ -23,10 +24,9 @@ export default checkAvalaiblity;
 // Create Booking
 export const createBooking = async (req, res) => {
   try {
-
-    const {userId} = req.auth;
+    const { userId } = req.auth;
     const { showId, selectedSeats } = req.body;
-    const {origin} = req.headers    
+    const { origin } = req.headers;
 
     if (!userId) {
       console.log("❌ No user ID found");
@@ -66,6 +66,9 @@ export const createBooking = async (req, res) => {
       show: showId,
       amount: showData.showPrice * selectedSeats.length,
       bookedSeats: selectedSeats,
+      isPaid: false, // Explicitly set to false
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes from now
     });
 
     console.log("✅ Booking created:", booking._id);
@@ -78,48 +81,59 @@ export const createBooking = async (req, res) => {
     showData.markModified("occupiedSeats");
     await showData.save();
 
-    // stripe gateway
+    // Stripe gateway
+    const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY);
 
-    const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY)
-
-    const lineitems = [{
-      price_data : {
+    const lineItems = [{
+      price_data: {
         currency: 'usd',
-        product_data : {
-          name : showData.movie.title
+        product_data: {
+          name: showData.movie.title,
+          description: `Seats: ${selectedSeats.join(', ')}`,
         },
-        unit_amount : Math.floor(booking.amount * 100) 
+        unit_amount: Math.floor(booking.amount * 100) 
       },
-      quantity : 1
-    }]
+      quantity: 1
+    }];
 
     const session = await stripeInstance.checkout.sessions.create({
-       success_url : `${origin}/bookings`,
-       cancel_url : `${origin}/bookings`,
-       line_items : lineitems,
-       mode : 'payment',
-       metadata :{
-          bookingId : booking._id.toString()
-       },
-    })
+      success_url: `${origin}/bookings?success=true`,
+      cancel_url: `${origin}/bookings?cancelled=true`,
+      line_items: lineItems,
+      mode: 'payment',
+      metadata: {
+        bookingId: booking._id.toString()
+      }
+      // Removed expires_at as Stripe requires minimum 30 minutes
+      // We'll handle expiration on our backend
+    });
 
     booking.paymentLink = session.url;
-    await booking.save()
+    booking.stripeSessionId = session.id;
+    await booking.save();
 
-    // run inngest function to check payment status after 10 mints
+    console.log("💳 Stripe session created:", session.id);
 
+    // Schedule seat release function
     await inngest.send({
-       name : 'app/checkpayment',
-       data : {
-         bookingId : booking._id.toString()
-       }
-    })
+      name: 'app/checkpayment',
+      data: {
+        bookingId: booking._id.toString()
+      }
+    });
+
+    console.log("⏰ Payment check scheduled");
 
     res.status(201).json({
       success: true,
       message: "Booking created successfully",
-      booking,
-      url : session.url
+      booking: {
+        id: booking._id,
+        amount: booking.amount,
+        seats: booking.bookedSeats,
+        isPaid: booking.isPaid
+      },
+      url: session.url
     });
   } catch (error) {
     console.error("❌ CREATE BOOKING ERROR:", error);

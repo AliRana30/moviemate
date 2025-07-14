@@ -19,8 +19,10 @@ const corsOptions = {
     methods : "POST , GET, PUT, DELETE",
 }
 
+
 //Stripe Webhook Route
 app.use('/api/stripe' , express.raw({type : 'application/json'}),stripeWebHook)
+
 
 app.use(clerkMiddleware())
 app.use(express.json())

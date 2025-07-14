@@ -11,26 +11,23 @@ const TrailersSection = () => {
       <p className="text-xl font-semibold text-white mb-4">Trailers</p>
 
       {/* Main Video */}
-      <div className="relative">
-
-        <div className="relative z-10">
-          <ReactPlayer
-            url={currentTrailer.videoUrl}
-            controls={true}
-            width="100%"
-            height="400px"
-            className="rounded-lg overflow-hidden"
-          />
-        </div>
+      <div className="relative aspect-video rounded-lg overflow-hidden">
+        <ReactPlayer
+          url={currentTrailer.videoUrl}
+          controls={true}
+          width="100%"
+          height="100%"
+          playing
+        />
       </div>
 
-      {/* Trailer Thumbnails */}
+      {/* Thumbnails */}
       <div className="flex gap-4 mt-6 overflow-x-auto pb-2 px-1">
         {dummyTrailers.map((trailer) => (
           <div
-            key={trailer.image}
+            key={trailer.videoUrl}
             onClick={() => setCurrentTrailer(trailer)}
-            className={`relative min-w-[130px] sm:min-w-[150px] md:min-w-[180px] h-24 sm:h-28 md:h-32 cursor-pointer group rounded-lg overflow-hidden flex-shrink-0 border-2 ${
+            className={`relative min-w-[150px] h-24 cursor-pointer group rounded-lg overflow-hidden border-2 ${
               trailer.videoUrl === currentTrailer.videoUrl
                 ? "border-red-500"
                 : "border-transparent"
@@ -38,7 +35,6 @@ const TrailersSection = () => {
           >
             <img
               src={trailer.image}
-             onClick={() => setCurrentTrailer(trailer)}
               alt="trailer"
               className="w-full h-full object-cover group-hover:brightness-75 transition"
             />
