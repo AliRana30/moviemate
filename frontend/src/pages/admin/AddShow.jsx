@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
 import { X } from "lucide-react";
-import axios from "axios";
 import { UserContext } from "../../context/UserContext";
 import toast from "react-hot-toast";
 
@@ -13,7 +12,7 @@ const AddShow = () => {
   const [dateTimeSlots, setDateTimeSlots] = useState([]);
   const [addshow, setAddShow] = useState(false);
 
-  const { getToken, user, image_base_url } = useContext(UserContext);
+  const {axios , getToken, user, image_base_url } = useContext(UserContext);
 
   const handleAddTime = () => {
     if (selectedDate && selectedTime) {
