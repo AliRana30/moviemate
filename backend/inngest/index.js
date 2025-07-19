@@ -55,58 +55,45 @@ const syncUserUpdation = inngest.createFunction(
 
 // Function to check payment and release seats if unpaid
 const reserveSeats = inngest.createFunction(
-  { id: "release-seats-delete-booking" },
-  { event: "app/checkpayment" },
+  {
+    id: "checkpayment",
+    name: "Check if payment is done or not",
+    concurrency: {
+      limit: 1,
+      key: "event.data.bookingId",
+    },
+  },
+  { event: "app/booking.created" },
+
   async ({ event, step }) => {
     const bookingId = event.data.bookingId;
-    
-    console.log(`⏰ Starting payment check for booking: ${bookingId}`);
 
-    // Wait for 10 minutes
-    const tenMinutesLater = new Date(Date.now() + 10 * 60 * 1000);
-    await step.sleepUntil("wait-for-10-minutes", tenMinutesLater);
+    await step.sleep("wait for 1 minute", "1m");
 
     await step.run("check-payment-status", async () => {
       try {
-        const booking = await Bookings.findById(bookingId);
-        if (!booking) {
-          console.log(`❌ Booking with ID ${bookingId} not found.`);
-          return;
-        }
+       const booking = await Bookings.findById(event.data.bookingId);
+const session = await stripeInstance.checkout.sessions.retrieve(booking.stripeSessionId, {
+  expand: ["payment_intent"],
+});
 
-        console.log(`🔍 Checking payment status for booking ${bookingId}`);
-        console.log(`💰 Payment status: ${booking.isPaid ? 'PAID' : 'UNPAID'}`);
+if (session && session.payment_status?.toLowerCase() === "paid") {
+  booking.isPaid = true;
+  booking.paymentDate = new Date();
+  await booking.save();
+  console.log("✅ isPaid set to true");
+} else {
+  console.log("❌ Payment not completed, not marking isPaid");
+}
 
-        if (!booking.isPaid) {
-          console.log(`⛔ Booking ${bookingId} not paid. Releasing seats...`);
-          
-          const show = await Show.findById(booking.show);
-          if (!show) {
-            console.log(`❌ Show not found for booking ${bookingId}`);
-            return;
-          }
 
-          // Release seats
-          booking.bookedSeats.forEach((seat) => {
-            delete show.occupiedSeats[seat];
-            console.log(`🪑 Released seat: ${seat}`);
-          });
-
-          show.markModified("occupiedSeats");
-          await show.save();
-
-          // Delete the unpaid booking
-          await Bookings.findByIdAndDelete(booking._id);
-          console.log(`✅ Booking ${bookingId} deleted and seats released.`);
-        } else {
-          console.log(`✅ Booking ${bookingId} is already paid. No action needed.`);
-        }
       } catch (error) {
-        console.error(`❌ Error in payment check for booking ${bookingId}:`, error);
+        console.error(`❌ Error while checking payment status for booking ${bookingId}:`, error);
       }
     });
   }
 );
+
 
 // Function to send confirmation email
 const confirmationEmail = inngest.createFunction(

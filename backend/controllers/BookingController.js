@@ -66,7 +66,7 @@ export const createBooking = async (req, res) => {
       show: showId,
       amount: showData.showPrice * selectedSeats.length,
       bookedSeats: selectedSeats,
-      isPaid: false, // Explicitly set to false
+      isPaid: false, 
       createdAt: new Date(),
       expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes from now
     });
@@ -104,13 +104,12 @@ export const createBooking = async (req, res) => {
       metadata: {
         bookingId: booking._id.toString()
       }
-      // Removed expires_at as Stripe requires minimum 30 minutes
-      // We'll handle expiration on our backend
+     
     });
 
     booking.paymentLink = session.url;
-    booking.stripeSessionId = session.id;
     await booking.save();
+    booking.stripeSessionId = session.id;
 
     console.log("💳 Stripe session created:", session.id);
 
