@@ -28,7 +28,6 @@ app.use(cors(corsOptions));
 app.use(clerkMiddleware());
 
 // Routes
-app.get('/', (req, res) => res.send("Server is Live"));
 app.use("api/inngest", serve({ client: inngest, functions }));
 app.use("api/show", showRouter);
 app.use("api/booking", BookingRouter);
@@ -40,5 +39,6 @@ app.listen(process.env.PORT, () => {
     connectDB();
     console.log(`Server is running on http://localhost:${process.env.PORT}`);
 });
+
 
 
