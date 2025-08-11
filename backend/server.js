@@ -14,7 +14,7 @@ import { stripeWebHook } from "./controllers/stripeWebHooks.js";
 
 const app = express(); 
 
-app.use('/api/stripe', express.raw({ type: 'application/json' }), stripeWebHook);
+app.use('api/stripe', express.raw({ type: 'application/json' }), stripeWebHook);
 
 app.use(express.json());
 
@@ -40,4 +40,5 @@ app.listen(process.env.PORT, () => {
     connectDB();
     console.log(`Server is running on http://localhost:${process.env.PORT}`);
 });
+
 
