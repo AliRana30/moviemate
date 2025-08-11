@@ -19,7 +19,7 @@ app.use('/api/stripe', express.raw({ type: 'application/json' }), stripeWebHook)
 app.use(express.json());
 
 const corsOptions = {
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: "https://moviemate-app-psi.vercel.app",
     methods: "POST, GET, PUT, DELETE",
 };
 app.use(cors(corsOptions));
